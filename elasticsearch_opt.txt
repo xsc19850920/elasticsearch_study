@@ -1,0 +1,289 @@
+﻿GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+GET /_search?size=5&from=5
+
+GET  _mapping
+
+
+GET _cluster/health
+
+
+POST /website/blog/123
+{
+"title": "My first blog entry",
+"text": "Just trying this out...",
+"date": "2014/01/01"
+}
+
+
+
+GET /website/_search
+
+POST /website/blog/
+{
+"title": "My second blog entry",
+"text": "Still trying this out...",
+"date": "2014/01/01"
+}
+
+GET /website/blog/1
+
+PUT /website/blog/1/_create
+{
+"title": "My first blog entry",
+"text": "Just trying this out..."
+}
+
+#根据外部版本号更新 version
+PUT /website/blog/3?version=5&version_type=external
+{
+"title": "My first external blog entry",
+"text": "Starting to get the hang of this..."
+}
+
+PUT /website/blog/2?version=10&version_type=external
+{
+"title": "My first external blog entry",
+"text": "This is a piece of cake..."
+}
+
+#局部更新（添加）一个属性
+POST /website/blog/1/_update  
+{
+  "doc": {
+    "tags":["testing"],
+    "views": 0
+  }
+}
+
+#如果我们试着去更新一个不存在的文档，更新操作就会失败。为了防止上述情况的发生，我们可以使用 upsert 参数来设定文档不存在时，它应该被创建
+POST /website/blog/1/_update
+{
+  "script": "ctx._source.views+=1",
+  "upsert": {
+    "views": 1
+  }
+}
+
+GET /_search
+
+GET /_search?q=%2Bname%3Ajohn+%2Btweet%3Amary
+
+#ik opt
+
+PUT /index
+
+
+
+POST /index/fulltext/_mapping
+{
+  "fulltext": {
+    "_all": {
+      "analyzer": "ik_max_word",
+      "search_analyzer": "ik_max_word",
+      "term_vector": "no",
+      "store": "false"
+    },
+    "properties": {
+      "content": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_max_word",
+        "include_in_all": "true",
+        "boost": 8
+      }
+    }
+  }
+}
+
+DELETE  /index
+
+
+GET  /index/_search
+
+GET /index/fulltext/_mapping
+
+POST /index/fulltext/1
+{
+  "content": "美国留给伊拉克的是个烂摊子吗"
+}
+
+POST /index/fulltext/2
+{
+  "content":"公安部：各地校车将享最高路权"
+}
+
+POST /index/fulltext/3
+{
+  "content":"中韩渔警冲突调查：韩警平均每天扣1艘中国渔船"
+}
+
+POST /index/fulltext/4
+{
+  "content":"中国驻洛杉矶领事馆遭亚裔男子枪击 嫌犯已自首"
+}
+
+POST /index/fulltext/5
+{
+  "content":"中华人民共和国国歌"
+}
+
+
+POST /index/_analyze
+{
+  "text": [
+    "美国留给伊拉克的是个烂摊子吗"
+  ],
+  "tokenizer": "ik_max_word"
+}
+
+POST /index/_analyze
+{
+  "text": [
+    "美国留给伊拉克的是个烂摊子吗"
+  ],
+  "tokenizer": "ik_smart"
+}
+
+
+POST  index/fulltext/_search  
+{
+    "query" : { "match" : { "content" : "中国" }},
+    "highlight" : {
+        "pre_tags" : ["<tag1>", "<tag2>"],
+        "post_tags" : ["</tag1>", "</tag2>"],
+        "fields" : {
+            "content" : {}
+        }
+    }
+}
+
+#拆词tokenizer=ik_smart | tokenizer=ik_max_word
+#http://58.2.221.224:9200/index/_analyze?text=%E4%B8%AD%E5%8D%8E%E4%BA%BA%E6%B0%91%E5%85%B1%E5%92%8C%E5%9B%BD%E5%9B%BD%E6%AD%8C&tokenizer=ik_smart
+
+
+# index a pdf file in relasticsearch
+PUT _ingest/pipeline/attachment
+{
+  "description" : "Extract attachment information",
+  "processors" : [
+    {
+      "attachment" : {
+        "field" : "data",
+        "indexed_chars" : -1
+      }
+    }
+  ]
+}
+
+GET  _ingest/pipeline/attachment
+
+
+DELETE /file_index
+
+PUT /file_index
+
+POST /file_index/object_type/_mapping
+{
+  "object_type": {
+    "_all": {
+      "analyzer": "ik_smart",
+      "search_analyzer": "ik_smart",
+      "term_vector": "no",
+      "store": "false"
+    },
+    "properties": {
+      "attachment.content": {
+        "type": "text",
+        "analyzer": "ik_smart",
+        "search_analyzer": "ik_smart",
+        "include_in_all": "true",
+        "boost": 8
+      }
+    }
+  }
+}
+
+PUT /file_index/object_type/index.txt?pipeline=attachment
+{
+  "data": "77u/576O5Zu955WZ57uZ5LyK5ouJ5YWL55qE5piv5Liq54OC5pGK5a2Q5ZCXP+i/meS4quacieW+heS6juaguOafpQ==",
+  "tokenizer": "ik_smart"
+}
+
+PUT /file_index/object_type/index2.txt?pipeline=attachment
+{
+  "data": "77u/5Lit6Z+p5riU6K2m5Yay56qB6LCD5p+l77ya6Z+p6K2m5bmz5Z2H5q+P5aSp5omjMeiJmOS4reWbvea4lOiIuQ==",
+  "tokenizer": "ik_smart"
+}
+
+PUT /file_index/object_type/index3.txt?pipeline=attachment
+{
+  "data": "77u/5Lit5Zu96am75rSb5p2J55+26aKG5LqL6aaG6YGt5Lqa6KOU55S35a2Q5p6q5Ye7IOWrjOeKr+W3suiHqummlg==",
+  "tokenizer": "ik_smart"
+}
+
+PUT /file_index/object_type/index4.txt?pipeline=attachment
+{
+  "data": "77u/5oiR6Ieq5bex55So5p2l5rWL6K+V55qE5paH5Lu2",
+  "tokenizer": "ik_smart"
+}
+
+GET /file_index/object_type/_search
+
+
+#匹配查询
+GET /file_index/object_type/_search
+{
+  "query": {
+    "match": {
+      "attachment.content": "中国"
+    }
+  }
+  
+}
+# 段落查询
+GET /file_index/object_type/_search
+{
+  "query": {
+    "match_phrase": {
+      "attachment.content": "调查"
+    }
+  },
+  "highlight": {
+    "pre_tags": ["<em>"],
+    "post_tags":["</em>"],
+    "fields": {  "attachment.content": {}}
+  }
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

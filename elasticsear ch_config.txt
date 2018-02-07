@@ -1,0 +1,52 @@
+﻿58.2.221.224 （node1）
+58.2.221.225 （node2）
+58.2.221.226 （node3）
+
+修改 3个 linux 系统配置 
+
+step1 ： 
+	vi /etc/security/limits.conf （hadoop是操作elasticsearch的用户）
+	@hadoop hard nofile 65536
+	@hadoop soft nofile 65536
+step 2：
+	vi /etc/sysctl.conf 
+	增加新的一行 
+	vm.max_map_count=262144
+	
+	修改后可能需要重启机器 （reboot）
+
+step 3: 
+	https://www.elastic.co/downloads 
+step 4:
+	上传 elasticsearch-5.1.1.tar.gz 到3个机器的 /opt/hadoop 下
+	cd /opt/hadoop
+	tar -xvf elasticsearch-5.1.1.tar.gz 
+step 5：
+	vi config/elasticsearch.yml
+	
+	
+	node1 :
+		cluster.name: elasticsearch-cluster
+		node.name: "es-node1"  
+		node.master: true
+		#discovery.zen.ping.multicast.enabled: false
+		#discovery.zen.ping.unicast.hosts: ["58.2.221.224"]
+		network.host: 0.0.0.0
+		
+	node2:
+		cluster.name: elasticsearch-cluster
+		node.name: "es-node2"
+		node.master: false
+		network.host: 0.0.0.0
+		discovery.zen.ping.unicast.hosts: ["58.2.221.224:9300"]
+		
+	node3:
+		cluster.name: elasticsearch-cluster
+		node.name: "es-node3"
+		node.master: false
+		network.host: 0.0.0.0
+		discovery.zen.ping.unicast.hosts: ["58.2.221.224:9300"]
+step6:
+	vi bin/elasticsearch 
+	增加 JAVA_HOME=/opt/hadoop/java/jdk1.8.0_92
+		export JAVA_HOME
